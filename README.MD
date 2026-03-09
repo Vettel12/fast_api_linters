@@ -20,7 +20,7 @@
 ## 📂 Структура проекта
 ```text
 recipe_project/
-├── ..github/workflows/
+├── .github/workflows/
 │   ├── ci.yml               # CI (Continuous Integration) конфигурация
 ├── app/
 │   ├── main.py              # Точка входа и Lifespan (создание таблиц)
