@@ -1,0 +1,5 @@
+echo "sql_app.db" >> .gitignore
+echo "__pycache__/" >> .gitignore
+echo ".pytest_cache/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo ".env" >> .gitignore
