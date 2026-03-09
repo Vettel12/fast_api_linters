@@ -1,15 +1,20 @@
+from typing import AsyncGenerator
+
 import pytest
-from httpx import AsyncClient, ASGITransport
-from app.main import app
+from httpx import ASGITransport, AsyncClient
+
 from app.database import Base, engine
+from app.main import app
+
 
 # 1. Настройка тестовой базы данных (Fixtures)
 @pytest.fixture(scope="session")
-def anyio_backend():
+def anyio_backend() -> str:
     return "asyncio"
 
+
 @pytest.fixture(autouse=True, scope="session")
-async def prepare_database():
+async def prepare_database() -> AsyncGenerator[None, None]:
     """Создаем таблицы перед тестами и удаляем после."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -20,44 +25,58 @@ async def prepare_database():
 
 # 2. Тест создания рецепта (POST /recipes)
 @pytest.mark.asyncio
-async def test_create_recipe():
+async def test_create_recipe() -> None:
     """
-    Проверяем, что рецепт успешно создается и 
+    Проверяем, что рецепт успешно создается и
     возвращается корректный JSON с ID.
     """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post("/recipes/", json={
-            "title": "Тестовый салат",
-            "cooking_time": 10,
-            "ingredients": "Зелень, масло",
-            "description": "Просто нарежьте всё"
-        })
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        response = await ac.post(
+            "/recipes/",
+            json={
+                "title": "Тестовый салат",
+                "cooking_time": 10,
+                "ingredients": "Зелень, масло",
+                "description": "Просто нарежьте всё",
+            },
+        )
     assert response.status_code == 201
     assert response.json()["title"] == "Тестовый салат"
     assert "id" in response.json()
 
+
 # 3. Тест получения списка (GET /recipes)
 @pytest.mark.asyncio
-async def test_get_all_recipes():
+async def test_get_all_recipes() -> None:
     """
     Проверяем, что эндпоинт отдает список.
     """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         response = await ac.get("/recipes/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+
 # 4. Тест инкремента просмотров (GET /recipes/{id})
 @pytest.mark.asyncio
-async def test_recipe_views_increment():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+async def test_recipe_views_increment() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         # 1. Создаем рецепт и получаем его реальные данные
-        create_resp = await ac.post("/recipes/", json={
-            "title": "Утренний кофе",
-            "cooking_time": 5,
-            "ingredients": "Кофе, вода",
-            "description": "Сварить в турке"
-        })
+        create_resp = await ac.post(
+            "/recipes/",
+            json={
+                "title": "Утренний кофе",
+                "cooking_time": 5,
+                "ingredients": "Кофе, вода",
+                "description": "Сварить в турке",
+            },
+        )
         # Проверяем, что создание прошло успешно
         assert create_resp.status_code == 201
         recipe_id = create_resp.json()["id"]
@@ -72,20 +91,26 @@ async def test_recipe_views_increment():
         assert response2.status_code == 200
         assert response2.json()["views_count"] == 2
 
+
 @pytest.mark.asyncio
-async def test_create_recipe_validation_error():
+async def test_create_recipe_validation_error() -> None:
     """
     Проверяем, что при отправке некорректных данных (строка вместо числа)
     FastAPI возвращает 422 Unprocessable Entity.
     """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post("/recipes/", json={
-            "title": "Сломанный рецепт",
-            "cooking_time": "десять минут",  # ОШИБКА: должно быть int
-            "ingredients": "Соль",
-            "description": "..."
-        })
-    
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        response = await ac.post(
+            "/recipes/",
+            json={
+                "title": "Сломанный рецепт",
+                "cooking_time": "десять минут",  # ОШИБКА: должно быть int
+                "ingredients": "Соль",
+                "description": "...",
+            },
+        )
+
     assert response.status_code == 422
     # Проверяем, что в ответе есть описание ошибки валидации
     assert "detail" in response.json()

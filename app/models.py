@@ -1,10 +1,10 @@
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, Integer, String
 
 from app.database import Base
 
 
 class Recipe(Base):
-    __tablename__ = 'recipes'
+    __tablename__ = "recipes"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)

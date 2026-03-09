@@ -1,0 +1,39 @@
+name: CI # Название процесса, которое будет видно во вкладке Actions
+
+on:
+  push:
+    branches: [ main ] # Запускать проверку при каждом пуше в ветку main
+  pull_request:
+    branches: [ main ] # Запускать проверку при создании PR в ветку main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest # Использовать свежий сервер на базе Linux
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4 # Копируем код репозитория на сервер GitHub
+
+      - name: Set up Python
+        uses: actions/setup-python@v5 # Устанавливаем интерпретатор Python
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Устанавливаем линтеры и тестовый движок
+          # Устанавливаем зависимости самого приложения
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Ruff Check (Linting) # Запуск линтера (подхватит настройки из pyproject.toml)
+        run: ruff check .
+
+      - name: Run Ruff Format (Style) # Проверка стиля (подхватит line-length из toml)
+        run: ruff format --check .
+
+      - name: Run Mypy (Types) # Проверка типов (использует strict и plugins из toml)
+        run: mypy .
+
+      - name: Run Tests (Pytest) # Запуск тестов (увидит asyncio_mode из toml)
+        run: pytest
