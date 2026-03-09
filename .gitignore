@@ -1,5 +1,23 @@
-echo "sql_app.db" >> .gitignore
-echo "__pycache__/" >> .gitignore
-echo ".pytest_cache/" >> .gitignore
-echo "*.pyc" >> .gitignore
-echo ".env" >> .gitignore
+# Базы данных (SQLite)
+sql_app.db
+*.db
+*.sqlite3
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Кэш инструментов (линтеры и тесты)
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Виртуальное окружение
+venv/
+.env
+
+# Системные файлы
+.DS_Store
+Thumbs.db
