@@ -1,7 +1,7 @@
 from typing import AsyncGenerator
+
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
 
 from app.database import Base, engine
 from app.main import app
@@ -33,7 +33,7 @@ async def clear_tables():
 async def ac() -> AsyncGenerator[AsyncClient, None]:
     """Универсальный клиент для выполнения запросов."""
     async with AsyncClient(
-        transport=ASGITransport(app=app), 
+        transport=ASGITransport(app=app),
         base_url="http://test"
     ) as client:
         yield client
@@ -62,7 +62,7 @@ async def test_get_all_recipes(ac: AsyncClient):
     await ac.post("/recipes/", json={
         "title": "Хлеб", "cooking_time": 1, "ingredients": "Мука", "description": "Печь"
     })
-    
+
     response = await ac.get("/recipes/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
