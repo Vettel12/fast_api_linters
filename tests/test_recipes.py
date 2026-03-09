@@ -8,12 +8,14 @@ from app.main import app
 
 # --- Фикстуры инфраструктуры ---
 
+
 @pytest.fixture(scope="session")
 def anyio_backend() -> str:
     return "asyncio"
 
+
 @pytest.fixture(autouse=True, scope="session")
-async def prepare_database():
+async def prepare_database() -> AsyncGenerator[None, None]:
     """Создаем схему БД один раз на всю сессию."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -21,26 +23,29 @@ async def prepare_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 @pytest.fixture(autouse=True)
-async def clear_tables():
+async def clear_tables() -> AsyncGenerator[None, None]:
     """Очищаем данные во всех таблицах после каждого теста для изоляции."""
     yield
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
 
+
 @pytest.fixture
 async def ac() -> AsyncGenerator[AsyncClient, None]:
     """Универсальный клиент для выполнения запросов."""
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         yield client
 
+
 # --- Тесты ---
 
-async def test_create_recipe(ac: AsyncClient):
+
+async def test_create_recipe(ac: AsyncClient) -> None:
     """Проверяем успешное создание рецепта."""
     response = await ac.post(
         "/recipes/",
@@ -56,19 +61,27 @@ async def test_create_recipe(ac: AsyncClient):
     assert data["title"] == "Тестовый салат"
     assert "id" in data
 
-async def test_get_all_recipes(ac: AsyncClient):
+
+async def test_get_all_recipes(ac: AsyncClient) -> None:
     """Проверяем получение списка рецептов."""
     # Создаем один рецепт, чтобы список не был пустым
-    await ac.post("/recipes/", json={
-        "title": "Хлеб", "cooking_time": 1, "ingredients": "Мука", "description": "Печь"
-    })
+    await ac.post(
+        "/recipes/",
+        json={
+            "title": "Хлеб",
+            "cooking_time": 1,
+            "ingredients": "Мука",
+            "description": "Печь",
+        },
+    )
 
     response = await ac.get("/recipes/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert len(response.json()) == 1
 
-async def test_recipe_views_increment(ac: AsyncClient):
+
+async def test_recipe_views_increment(ac: AsyncClient) -> None:
     """Проверяем счетчик просмотров."""
     # 1. Создаем
     create_resp = await ac.post(
@@ -90,7 +103,8 @@ async def test_recipe_views_increment(ac: AsyncClient):
     res2 = await ac.get(f"/recipes/{recipe_id}")
     assert res2.json()["views_count"] == 2
 
-async def test_create_recipe_validation_error(ac: AsyncClient):
+
+async def test_create_recipe_validation_error(ac: AsyncClient) -> None:
     """Проверяем ошибку валидации (422)."""
     response = await ac.post(
         "/recipes/",
